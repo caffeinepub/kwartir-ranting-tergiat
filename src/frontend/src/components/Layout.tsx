@@ -2,6 +2,7 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import {
   ChevronRight,
+  Image,
   LayoutDashboard,
   ListChecks,
   LogOut,
@@ -39,6 +40,11 @@ export default function Layout({ children, nav, onNavigate }: LayoutProps) {
             label: "Persetujuan Akun",
             icon: UserCheck,
           },
+          {
+            page: "banner" as const,
+            label: "Kelola Banner",
+            icon: Image,
+          },
         ]
       : []),
   ];
@@ -49,7 +55,7 @@ export default function Layout({ children, nav, onNavigate }: LayoutProps) {
       <header className="sticky top-0 z-50 bg-card border-b border-border h-14 flex items-center px-4 gap-4 shadow-xs">
         <div className="flex items-center gap-2 flex-1">
           <img
-            src="/assets/tergiat-019d28b4-1904-700e-be4b-70725b6daedf.png"
+            src="/assets/logo.png"
             alt="Logo"
             className="w-9 h-9 object-contain"
           />

@@ -14,7 +14,10 @@ import {
 import { ChevronLeft, ChevronRight, Star, Trophy, Users } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { NavState } from "../App";
-import { usePublicListKwarran } from "../hooks/usePublicQueries";
+import {
+  useListBannerImages,
+  usePublicListKwarran,
+} from "../hooks/usePublicQueries";
 import { kwarranToFormData } from "../utils/kwarranHelpers";
 import {
   computeScoreA,
@@ -25,23 +28,24 @@ import {
   getStatusLabel,
 } from "../utils/scoring";
 
-const BANNERS = [
+const DEFAULT_BANNERS = [
   "/assets/generated/banner-1.dim_1200x400.jpg",
   "/assets/generated/banner-2.dim_1200x400.jpg",
   "/assets/generated/banner-3.dim_1200x400.jpg",
 ];
 
-function BannerSlider() {
+function BannerSlider({ images }: { images: string[] }) {
   const [current, setCurrent] = useState(0);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const count = images.length;
 
   const next = useCallback(() => {
-    setCurrent((c) => (c + 1) % BANNERS.length);
-  }, []);
+    setCurrent((c) => (c + 1) % count);
+  }, [count]);
 
   const prev = useCallback(() => {
-    setCurrent((c) => (c - 1 + BANNERS.length) % BANNERS.length);
-  }, []);
+    setCurrent((c) => (c - 1 + count) % count);
+  }, [count]);
 
   useEffect(() => {
     timerRef.current = setInterval(next, 4000);
@@ -55,21 +59,23 @@ function BannerSlider() {
     timerRef.current = setInterval(next, 4000);
   }, [next]);
 
+  const safeIndex = count > 0 ? current % count : 0;
+
   return (
     <div
-      className="relative w-full overflow-hidden bg-muted"
-      style={{ height: "clamp(180px, 35vw, 420px)" }}
+      className="relative w-full overflow-hidden bg-black"
+      style={{ aspectRatio: "16/5" }}
       data-ocid="banner.panel"
     >
-      {BANNERS.map((src, i) => (
+      {images.map((src, i) => (
         <img
           key={src}
           src={src}
           alt={`Banner ${i + 1}`}
-          className="absolute inset-0 w-full h-full object-cover transition-opacity duration-700"
+          className="absolute inset-0 w-full h-full object-contain transition-opacity duration-700"
           style={{
-            opacity: i === current ? 1 : 0,
-            zIndex: i === current ? 1 : 0,
+            opacity: i === safeIndex ? 1 : 0,
+            zIndex: i === safeIndex ? 1 : 0,
           }}
         />
       ))}
@@ -105,7 +111,7 @@ function BannerSlider() {
 
       {/* Dot indicators */}
       <div className="absolute bottom-3 left-1/2 -translate-x-1/2 z-20 flex gap-2">
-        {BANNERS.map((bannerSrc, i) => (
+        {images.map((bannerSrc, i) => (
           <button
             type="button"
             key={bannerSrc}
@@ -115,7 +121,7 @@ function BannerSlider() {
               resetTimer();
             }}
             className={`w-2.5 h-2.5 rounded-full transition-all duration-300 ${
-              i === current
+              i === safeIndex
                 ? "bg-white scale-125"
                 : "bg-white/50 hover:bg-white/80"
             }`}
@@ -132,6 +138,12 @@ interface Props {
 
 export default function LandingPage({ onNavigate }: Props) {
   const { data: kwarranList, isLoading } = usePublicListKwarran();
+  const { data: uploadedBanners } = useListBannerImages();
+
+  const bannerImages =
+    uploadedBanners && uploadedBanners.length > 0
+      ? uploadedBanners
+      : DEFAULT_BANNERS;
 
   const scoredList = useMemo(() => {
     if (!kwarranList) return [];
@@ -167,7 +179,7 @@ export default function LandingPage({ onNavigate }: Props) {
         <div className="max-w-7xl mx-auto px-4 h-14 flex items-center gap-4">
           <div className="flex items-center gap-2 flex-1">
             <img
-              src="/assets/tergiat-019d28b4-1904-700e-be4b-70725b6daedf.png"
+              src="/assets/logo.png"
               alt="Logo"
               className="w-9 h-9 object-contain"
             />
@@ -199,7 +211,7 @@ export default function LandingPage({ onNavigate }: Props) {
       </header>
 
       {/* Banner Slider */}
-      <BannerSlider />
+      <BannerSlider images={bannerImages} />
 
       {/* Main Content */}
       <main className="flex-1 max-w-7xl mx-auto w-full px-4 py-8">

@@ -77,7 +77,7 @@ export default function RegisterPage({ onNavigate }: Props) {
           </button>
           <div className="flex items-center gap-2 flex-1">
             <img
-              src="/assets/tergiat-019d28b4-1904-700e-be4b-70725b6daedf.png"
+              src="/assets/logo.png"
               alt="Logo"
               className="w-8 h-8 object-contain"
             />
@@ -145,7 +145,7 @@ export default function RegisterPage({ onNavigate }: Props) {
               <CardHeader className="pb-2">
                 <div className="flex justify-center mb-4">
                   <img
-                    src="/assets/tergiat-019d28b4-1904-700e-be4b-70725b6daedf.png"
+                    src="/assets/logo.png"
                     alt="Logo"
                     className="w-16 h-16 object-contain"
                   />

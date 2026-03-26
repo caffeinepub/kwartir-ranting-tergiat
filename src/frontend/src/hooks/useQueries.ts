@@ -79,3 +79,31 @@ export function useIsAdmin() {
     enabled: !!actor && !isFetching,
   });
 }
+
+export function useAddBannerImage() {
+  const { actor } = useActor();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (url: string) => {
+      if (!actor) throw new Error("Actor not ready");
+      return actor.addBannerImage(url);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["banner-images"] });
+    },
+  });
+}
+
+export function useRemoveBannerImage() {
+  const { actor } = useActor();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (url: string) => {
+      if (!actor) throw new Error("Actor not ready");
+      return actor.removeBannerImage(url);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["banner-images"] });
+    },
+  });
+}

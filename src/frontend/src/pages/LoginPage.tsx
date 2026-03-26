@@ -19,7 +19,7 @@ export default function LoginPage({ onNavigate }: Props) {
     <div className="min-h-screen flex flex-col items-center justify-center bg-background px-4">
       <div className="w-full max-w-sm text-center">
         <img
-          src="/assets/tergiat-019d28b4-1904-700e-be4b-70725b6daedf.png"
+          src="/assets/logo.png"
           alt="Logo Kwarran Tergiat"
           className="w-24 h-24 object-contain mx-auto mb-6"
         />

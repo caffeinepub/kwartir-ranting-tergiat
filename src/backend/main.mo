@@ -10,13 +10,17 @@ import Iter "mo:core/Iter";
 import AccessControl "authorization/access-control";
 import MixinAuthorization "authorization/MixinAuthorization";
 import UserApproval "user-approval/approval";
+import MixinStorage "blob-storage/Mixin";
 
 
+// Attach migration in with-clause
 
 actor {
   // Attach mixin authorization
   let accessControlState = AccessControl.initState();
   include MixinAuthorization(accessControlState);
+  // Attach blob storage functionality
+  include MixinStorage();
 
   // Include approval system
   let approvalState = UserApproval.initState(accessControlState);
@@ -105,11 +109,6 @@ actor {
     updatedAt : Time.Time;
   };
 
-  type ProgramItem = {
-    frekuensi : Nat;
-    keterangan : Text;
-  };
-
   // Storage
   let kwarranStore = Map.empty<Nat, Kwarran>();
   var nextKwarranId = 1;
@@ -168,5 +167,28 @@ actor {
     };
 
     kwarranStore.remove(id);
+  };
+
+  // Banner Images Management
+
+  // Store banner image URLs in a persistent set
+  let bannerImages = Map.empty<Text, ()>();
+
+  public shared ({ caller }) func addBannerImage(url : Text) : async () {
+    if (not AccessControl.isAdmin(accessControlState, caller)) {
+      Runtime.trap("Unauthorized: Only admins can add banner images");
+    };
+    bannerImages.add(url, ());
+  };
+
+  public shared ({ caller }) func removeBannerImage(url : Text) : async () {
+    if (not AccessControl.isAdmin(accessControlState, caller)) {
+      Runtime.trap("Unauthorized: Only admins can remove banner images");
+    };
+    bannerImages.remove(url);
+  };
+
+  public query ({ caller }) func listBannerImages() : async [Text] {
+    bannerImages.keys().toArray();
   };
 };

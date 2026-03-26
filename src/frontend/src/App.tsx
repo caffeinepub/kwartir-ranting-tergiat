@@ -3,6 +3,7 @@ import { useState } from "react";
 import Layout from "./components/Layout";
 import { useInternetIdentity } from "./hooks/useInternetIdentity";
 import ApprovalPage from "./pages/ApprovalPage";
+import BannerPage from "./pages/BannerPage";
 import DaftarKwarranPage from "./pages/DaftarKwarranPage";
 import DashboardPage from "./pages/DashboardPage";
 import KwarranFormPage from "./pages/KwarranFormPage";
@@ -18,7 +19,8 @@ export type PageName =
   | "daftar"
   | "tambah"
   | "edit"
-  | "approval";
+  | "approval"
+  | "banner";
 
 export interface NavState {
   page: PageName;
@@ -81,6 +83,7 @@ export default function App() {
           <KwarranFormPage editId={nav.editId} onNavigate={navigate} />
         )}
         {nav.page === "approval" && <ApprovalPage />}
+        {nav.page === "banner" && <BannerPage />}
       </Layout>
       <Toaster />
     </>

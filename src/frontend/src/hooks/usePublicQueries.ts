@@ -70,3 +70,15 @@ export function useSetApproval() {
     },
   });
 }
+
+export function useListBannerImages() {
+  const { actor, isFetching } = useActor();
+  return useQuery<string[]>({
+    queryKey: ["banner-images"],
+    queryFn: async () => {
+      if (!actor) return [];
+      return actor.listBannerImages();
+    },
+    enabled: !!actor && !isFetching,
+  });
+}

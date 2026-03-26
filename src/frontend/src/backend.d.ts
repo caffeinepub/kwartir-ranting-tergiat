@@ -51,6 +51,7 @@ export enum UserRole {
     guest = "guest"
 }
 export interface backendInterface {
+    addBannerImage(url: string): Promise<void>;
     assignCallerUserRole(user: Principal, role: UserRole): Promise<void>;
     createKwarran(kwarran: Kwarran): Promise<bigint>;
     deleteKwarran(id: bigint): Promise<void>;
@@ -61,7 +62,9 @@ export interface backendInterface {
     isCallerAdmin(): Promise<boolean>;
     isCallerApproved(): Promise<boolean>;
     listApprovals(): Promise<Array<UserApprovalInfo>>;
+    listBannerImages(): Promise<Array<string>>;
     listKwarran(): Promise<Array<Kwarran>>;
+    removeBannerImage(url: string): Promise<void>;
     requestApproval(): Promise<void>;
     saveCallerUserProfile(profile: UserProfile): Promise<void>;
     setApproval(user: Principal, status: ApprovalStatus): Promise<void>;
