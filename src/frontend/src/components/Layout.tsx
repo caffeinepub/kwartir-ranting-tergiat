@@ -49,7 +49,7 @@ export default function Layout({ children, nav, onNavigate }: LayoutProps) {
       <header className="sticky top-0 z-50 bg-card border-b border-border h-14 flex items-center px-4 gap-4 shadow-xs">
         <div className="flex items-center gap-2 flex-1">
           <img
-            src="/assets/uploads/tergiat-019d28b4-1904-700e-be4b-70725b6daedf-1.png"
+            src="/assets/tergiat-019d28b4-1904-700e-be4b-70725b6daedf.png"
             alt="Logo"
             className="w-9 h-9 object-contain"
           />

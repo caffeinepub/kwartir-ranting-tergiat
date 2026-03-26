@@ -167,7 +167,7 @@ export default function LandingPage({ onNavigate }: Props) {
         <div className="max-w-7xl mx-auto px-4 h-14 flex items-center gap-4">
           <div className="flex items-center gap-2 flex-1">
             <img
-              src="/assets/uploads/tergiat-019d28b4-1904-700e-be4b-70725b6daedf-1.png"
+              src="/assets/tergiat-019d28b4-1904-700e-be4b-70725b6daedf.png"
               alt="Logo"
               className="w-9 h-9 object-contain"
             />
