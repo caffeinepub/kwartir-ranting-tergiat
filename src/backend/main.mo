@@ -1,4 +1,3 @@
-import Array "mo:core/Array";
 import Map "mo:core/Map";
 import Nat "mo:core/Nat";
 import Order "mo:core/Order";
@@ -6,14 +5,12 @@ import Principal "mo:core/Principal";
 import Runtime "mo:core/Runtime";
 import Time "mo:core/Time";
 import Text "mo:core/Text";
-import Iter "mo:core/Iter";
 import AccessControl "authorization/access-control";
 import MixinAuthorization "authorization/MixinAuthorization";
 import UserApproval "user-approval/approval";
 import MixinStorage "blob-storage/Mixin";
 
 
-// Attach migration in with-clause
 
 actor {
   // Attach mixin authorization
@@ -56,9 +53,6 @@ actor {
 
   // User Profile Functions
   public query ({ caller }) func getCallerUserProfile() : async ?UserProfile {
-    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
-      Runtime.trap("Unauthorized: Only users can access profiles");
-    };
     userProfiles.get(caller);
   };
 
@@ -70,17 +64,12 @@ actor {
   };
 
   public shared ({ caller }) func saveCallerUserProfile(profile : UserProfile) : async () {
-    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
-      Runtime.trap("Unauthorized: Only users can save profiles");
-    };
     userProfiles.add(caller, profile);
   };
 
-  // Types
-  module Kwarran {
-    public func compare(a : { id : Nat }, b : { id : Nat }) : Order.Order {
-      Nat.compare(a.id, b.id);
-    };
+  // Comparator for sorting by id
+  func compareKwarranById(a : { id : Nat }, b : { id : Nat }) : Order.Order {
+    Nat.compare(a.id, b.id);
   };
 
   type Kwarran = {
@@ -107,6 +96,7 @@ actor {
     satuanKaryaNames : Text;
     createdAt : Time.Time;
     updatedAt : Time.Time;
+    owner : Principal;
   };
 
   // Storage
@@ -128,6 +118,7 @@ actor {
       id = newId;
       createdAt = now;
       updatedAt = now;
+      owner = caller;
     };
 
     kwarranStore.add(newId, newKwarran);
@@ -135,43 +126,50 @@ actor {
   };
 
   public shared ({ caller }) func updateKwarran(id : Nat, kwarran : Kwarran) : async () {
-    if (not (UserApproval.isApproved(approvalState, caller) or AccessControl.hasPermission(accessControlState, caller, #admin))) {
-      Runtime.trap("Unauthorized: Only approved users can update Kwarran records");
-    };
-
     switch (kwarranStore.get(id)) {
       case (null) { Runtime.trap("Kwarran not found") };
       case (?existing) {
+        if (caller != existing.owner and not AccessControl.isAdmin(accessControlState, caller)) {
+          Runtime.trap("Unauthorized");
+        };
         let updated : Kwarran = {
           kwarran with
           id;
           createdAt = existing.createdAt;
           updatedAt = Time.now();
+          owner = existing.owner;
         };
         kwarranStore.add(id, updated);
       };
     };
   };
 
-  public query ({ caller }) func getKwarran(id : Nat) : async ?Kwarran {
+  public query ({ caller = _ }) func getKwarran(id : Nat) : async ?Kwarran {
     kwarranStore.get(id);
   };
 
+  public query ({ caller }) func listMyKwarran() : async [Kwarran] {
+    if (not (UserApproval.isApproved(approvalState, caller) or AccessControl.isAdmin(accessControlState, caller))) {
+      Runtime.trap("Unauthorized");
+    };
+    kwarranStore.values().toArray().filter(func(x : Kwarran) : Bool { x.owner == caller });
+  };
+
   public query ({ caller }) func listKwarran() : async [Kwarran] {
-    kwarranStore.values().toArray().sort();
+    if (not AccessControl.isAdmin(accessControlState, caller)) {
+      Runtime.trap("Unauthorized");
+    };
+    kwarranStore.values().toArray().sort(compareKwarranById);
   };
 
   public shared ({ caller }) func deleteKwarran(id : Nat) : async () {
     if (not (AccessControl.hasPermission(accessControlState, caller, #admin))) {
       Runtime.trap("Unauthorized: Only admins can delete Kwarran records");
     };
-
     kwarranStore.remove(id);
   };
 
   // Banner Images Management
-
-  // Store banner image URLs in a persistent set
   let bannerImages = Map.empty<Text, ()>();
 
   public shared ({ caller }) func addBannerImage(url : Text) : async () {
@@ -188,7 +186,7 @@ actor {
     bannerImages.remove(url);
   };
 
-  public query ({ caller }) func listBannerImages() : async [Text] {
+  public query ({ caller = _ }) func listBannerImages() : async [Text] {
     bannerImages.keys().toArray();
   };
 };

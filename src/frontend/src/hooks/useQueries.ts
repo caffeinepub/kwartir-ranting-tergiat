@@ -14,6 +14,18 @@ export function useListKwarran() {
   });
 }
 
+export function useListMyKwarran() {
+  const { actor, isFetching } = useActor();
+  return useQuery<Kwarran[]>({
+    queryKey: ["myKwarran"],
+    queryFn: async () => {
+      if (!actor) return [];
+      return actor.listMyKwarran();
+    },
+    enabled: !!actor && !isFetching,
+  });
+}
+
 export function useGetKwarran(id: bigint | null) {
   const { actor, isFetching } = useActor();
   return useQuery<Kwarran | null>({
@@ -36,6 +48,7 @@ export function useCreateKwarran() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["kwarran"] });
+      queryClient.invalidateQueries({ queryKey: ["myKwarran"] });
     },
   });
 }
@@ -50,6 +63,7 @@ export function useUpdateKwarran() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["kwarran"] });
+      queryClient.invalidateQueries({ queryKey: ["myKwarran"] });
     },
   });
 }
@@ -64,6 +78,7 @@ export function useDeleteKwarran() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["kwarran"] });
+      queryClient.invalidateQueries({ queryKey: ["myKwarran"] });
     },
   });
 }

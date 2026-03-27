@@ -14,16 +14,25 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
-import { ArrowLeft, Loader2, Save } from "lucide-react";
-import { useEffect, useState } from "react";
+import {
+  ArrowLeft,
+  CheckCircle2,
+  Loader2,
+  Paperclip,
+  Save,
+} from "lucide-react";
+import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import type { NavState } from "../App";
 import type { Kwarran } from "../backend.d.ts";
+import { useInternetIdentity } from "../hooks/useInternetIdentity";
 import {
   useCreateKwarran,
   useGetKwarran,
+  useIsAdmin,
   useUpdateKwarran,
 } from "../hooks/useQueries";
+import { useUploadFile } from "../hooks/useUploadFile";
 import {
   type ActivityData,
   C1_ACTIVITIES,
@@ -110,6 +119,7 @@ function formDataToKwarran(fd: KwarranFormData): Kwarran {
     satuanKaryaNames: fd.satuanKaryaNames,
     createdAt: BigInt(0),
     updatedAt: BigInt(0),
+    owner: {} as Kwarran["owner"], // will be overridden with valid Principal before sending
   };
 }
 
@@ -121,12 +131,33 @@ interface ActivityRowProps {
 }
 
 function ActivityRow({ label, value, ocidPrefix, onChange }: ActivityRowProps) {
+  const uploadFile = useUploadFile();
+  const [isUploading, setIsUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setIsUploading(true);
+    try {
+      const bytes = new Uint8Array(await file.arrayBuffer());
+      const url = await uploadFile(bytes);
+      onChange({ ...value, fileUrl: url });
+      toast.success("Berkas berhasil diunggah (+0.5 poin)");
+    } catch {
+      toast.error("Gagal mengunggah berkas");
+    } finally {
+      setIsUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+  };
+
   return (
-    <div className="grid grid-cols-12 gap-3 items-center py-2.5 border-b border-border last:border-0">
-      <div className="col-span-5 md:col-span-6">
+    <div className="grid grid-cols-12 gap-2 items-center py-2.5 border-b border-border last:border-0">
+      <div className="col-span-5">
         <p className="text-sm text-foreground">{label}</p>
       </div>
-      <div className="col-span-3 md:col-span-2">
+      <div className="col-span-2">
         <Input
           type="number"
           min={0}
@@ -142,14 +173,50 @@ function ActivityRow({ label, value, ocidPrefix, onChange }: ActivityRowProps) {
           data-ocid={`${ocidPrefix}.input`}
         />
       </div>
-      <div className="col-span-4">
+      <div className="col-span-3">
         <Input
-          placeholder="Keterangan bukti..."
+          placeholder="Keterangan..."
           value={value.keterangan}
           onChange={(e) => onChange({ ...value, keterangan: e.target.value })}
           className="h-8 text-sm"
           data-ocid={`${ocidPrefix}.input`}
         />
+      </div>
+      <div className="col-span-2 flex items-center justify-center">
+        <input
+          ref={fileInputRef}
+          type="file"
+          className="hidden"
+          accept="image/*,.pdf,.doc,.docx"
+          onChange={handleFileUpload}
+          data-ocid={`${ocidPrefix}.upload_button`}
+        />
+        {isUploading ? (
+          <Loader2
+            className="w-4 h-4 animate-spin text-muted-foreground"
+            data-ocid={`${ocidPrefix}.loading_state`}
+          />
+        ) : value.fileUrl ? (
+          <a
+            href={value.fileUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-1 text-xs text-success font-medium hover:underline"
+            title="Lihat berkas"
+          >
+            <CheckCircle2 className="w-3.5 h-3.5" />
+            <span className="hidden md:inline">+0.5</span>
+          </a>
+        ) : (
+          <button
+            type="button"
+            onClick={() => fileInputRef.current?.click()}
+            className="p-1.5 rounded-md hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
+            title="Unggah berkas pendukung (+0.5 poin)"
+          >
+            <Paperclip className="w-3.5 h-3.5" />
+          </button>
+        )}
       </div>
     </div>
   );
@@ -181,20 +248,25 @@ function SectionCGroup({
       <h4 className="text-sm font-semibold text-foreground mb-3 pb-2 border-b border-border">
         {title}
       </h4>
-      <div className="grid grid-cols-12 gap-3 mb-2">
-        <div className="col-span-5 md:col-span-6">
+      <div className="grid grid-cols-12 gap-2 mb-2">
+        <div className="col-span-5">
           <span className="text-xs font-medium text-muted-foreground">
             Nama Kegiatan
           </span>
         </div>
-        <div className="col-span-3 md:col-span-2 text-center">
+        <div className="col-span-2 text-center">
           <span className="text-xs font-medium text-muted-foreground">
             Frekuensi
           </span>
         </div>
-        <div className="col-span-4">
+        <div className="col-span-3">
           <span className="text-xs font-medium text-muted-foreground">
-            Keterangan Bukti
+            Keterangan
+          </span>
+        </div>
+        <div className="col-span-2 text-center">
+          <span className="text-xs font-medium text-muted-foreground">
+            Berkas
           </span>
         </div>
       </div>
@@ -216,6 +288,8 @@ export default function KwarranFormPage({ editId, onNavigate }: Props) {
   const { data: existingData, isLoading: isLoadingExisting } = useGetKwarran(
     isEdit ? editId : null,
   );
+  const { data: isAdmin } = useIsAdmin();
+  const { identity } = useInternetIdentity();
 
   const createMutation = useCreateKwarran();
   const updateMutation = useUpdateKwarran();
@@ -229,6 +303,18 @@ export default function KwarranFormPage({ editId, onNavigate }: Props) {
       setForm(kwarranToFormData(existingData));
     }
   }, [isEdit, existingData]);
+
+  // Ownership check: non-admin users can only edit their own records
+  useEffect(() => {
+    if (isEdit && existingData && isAdmin === false && identity) {
+      const callerPrincipal = identity.getPrincipal().toString();
+      const ownerPrincipal = existingData.owner?.toString();
+      if (ownerPrincipal && callerPrincipal !== ownerPrincipal) {
+        toast.error("Anda tidak memiliki izin untuk mengedit data ini");
+        onNavigate({ page: "daftar" });
+      }
+    }
+  }, [isEdit, existingData, isAdmin, identity, onNavigate]);
 
   const set = (key: keyof KwarranFormData, value: unknown) => {
     setForm((prev) => ({ ...prev, [key]: value }));
@@ -245,14 +331,31 @@ export default function KwarranFormPage({ editId, onNavigate }: Props) {
       setActiveTab("a");
       return;
     }
+    if (!identity) {
+      toast.error("Sesi login tidak ditemukan, silakan login ulang");
+      return;
+    }
     setIsSaving(true);
     try {
       const kwarranData = formDataToKwarran(form);
       if (isEdit && editId !== undefined) {
-        await updateMutation.mutateAsync({ id: editId, kwarran: kwarranData });
+        // Use existing owner for update (backend preserves it anyway, but Candid needs a valid Principal)
+        const kwarranWithOwner = {
+          ...kwarranData,
+          owner: existingData?.owner ?? identity.getPrincipal(),
+        };
+        await updateMutation.mutateAsync({
+          id: editId,
+          kwarran: kwarranWithOwner,
+        });
         toast.success("Data kwarran berhasil diperbarui");
       } else {
-        await createMutation.mutateAsync(kwarranData);
+        // Pass caller's principal so Candid can encode the request
+        const kwarranWithOwner = {
+          ...kwarranData,
+          owner: identity.getPrincipal(),
+        };
+        await createMutation.mutateAsync(kwarranWithOwner);
         toast.success("Kwarran baru berhasil ditambahkan");
       }
       onNavigate({ page: "daftar" });
@@ -800,6 +903,14 @@ export default function KwarranFormPage({ editId, onNavigate }: Props) {
                 Isi frekuensi kegiatan selama 5 tahun dan keterangan bukti fisik
                 (proposal, surat edaran, foto kegiatan)
               </p>
+              <div className="flex items-start gap-2 text-xs text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-md px-3 py-2 mt-2">
+                <span className="shrink-0">💡</span>
+                <span>
+                  Lampirkan berkas pendukung (foto/dokumen) untuk mendapat{" "}
+                  <strong>+0.5 poin</strong> per kegiatan. Total bonus maks
+                  hingga skor C mencapai 60.
+                </span>
+              </div>
               <div className="flex items-center gap-3 mt-2">
                 <Progress value={(scoreC / 60) * 100} className="flex-1 h-2" />
                 <span className="text-sm font-medium shrink-0">

@@ -1,6 +1,7 @@
 export interface ActivityData {
   frekuensi: number;
   keterangan: string;
+  fileUrl?: string; // URL of uploaded supporting document
 }
 
 export interface SectionCData {

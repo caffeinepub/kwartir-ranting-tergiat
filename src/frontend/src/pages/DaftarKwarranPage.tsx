@@ -15,12 +15,24 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ListChecks, Pencil, PlusCircle, Search, Trash2 } from "lucide-react";
+import {
+  Info,
+  ListChecks,
+  Pencil,
+  PlusCircle,
+  Search,
+  Trash2,
+} from "lucide-react";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import type { NavState } from "../App";
 import type { Kwarran } from "../backend.d.ts";
-import { useDeleteKwarran, useListKwarran } from "../hooks/useQueries";
+import {
+  useDeleteKwarran,
+  useIsAdmin,
+  useListKwarran,
+  useListMyKwarran,
+} from "../hooks/useQueries";
 import { createDefaultSectionC } from "../types/kwarran";
 import type { KwarranFormData } from "../types/kwarran";
 import {
@@ -72,7 +84,13 @@ interface Props {
 }
 
 export default function DaftarKwarranPage({ onNavigate }: Props) {
-  const { data: kwarranList, isLoading } = useListKwarran();
+  const { data: isAdmin } = useIsAdmin();
+  const { data: allKwarran, isLoading: loadingAll } = useListKwarran();
+  const { data: myKwarran, isLoading: loadingMy } = useListMyKwarran();
+
+  const kwarranList = isAdmin ? allKwarran : myKwarran;
+  const isLoading = isAdmin ? loadingAll : loadingMy;
+
   const deleteMutation = useDeleteKwarran();
   const [search, setSearch] = useState("");
 
@@ -97,8 +115,16 @@ export default function DaftarKwarranPage({ onNavigate }: Props) {
         <div>
           <h1 className="text-2xl font-bold text-foreground">Daftar Kwarran</h1>
           <p className="text-muted-foreground text-sm mt-0.5">
-            Kelola data seluruh Kwartir Ranting
+            {isAdmin
+              ? "Kelola data seluruh Kwartir Ranting"
+              : "Data Kwartir Ranting milik Anda"}
           </p>
+          {isAdmin === false && (
+            <div className="flex items-center gap-1.5 text-xs text-blue-700 dark:text-blue-300 mt-2 bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 rounded-md px-3 py-1.5 inline-flex">
+              <Info className="w-3.5 h-3.5 shrink-0" />
+              Menampilkan data milik Anda saja.
+            </div>
+          )}
         </div>
         <Button
           onClick={() => onNavigate({ page: "tambah" })}
@@ -114,7 +140,7 @@ export default function DaftarKwarranPage({ onNavigate }: Props) {
         <CardHeader className="pb-3">
           <div className="flex items-center justify-between gap-4">
             <CardTitle className="text-base font-semibold">
-              Semua Kwartir Ranting
+              {isAdmin ? "Semua Kwartir Ranting" : "Kwartir Ranting Anda"}
             </CardTitle>
             <div className="relative w-64">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
@@ -196,39 +222,43 @@ export default function DaftarKwarranPage({ onNavigate }: Props) {
                       >
                         <Pencil className="w-3.5 h-3.5" />
                       </Button>
-                      <AlertDialog>
-                        <AlertDialogTrigger asChild>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="h-8 w-8 p-0 text-muted-foreground hover:text-destructive"
-                            data-ocid={`daftar.delete_button.${index + 1}`}
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </Button>
-                        </AlertDialogTrigger>
-                        <AlertDialogContent data-ocid="daftar.dialog">
-                          <AlertDialogHeader>
-                            <AlertDialogTitle>Hapus Kwarran?</AlertDialogTitle>
-                            <AlertDialogDescription>
-                              Anda akan menghapus <strong>{k.name}</strong>.
-                              Tindakan ini tidak dapat dibatalkan.
-                            </AlertDialogDescription>
-                          </AlertDialogHeader>
-                          <AlertDialogFooter>
-                            <AlertDialogCancel data-ocid="daftar.cancel_button">
-                              Batal
-                            </AlertDialogCancel>
-                            <AlertDialogAction
-                              data-ocid="daftar.confirm_button"
-                              onClick={() => handleDelete(k.id, k.name)}
-                              className="bg-destructive hover:bg-destructive/90 text-destructive-foreground"
+                      {isAdmin && (
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-8 w-8 p-0 text-muted-foreground hover:text-destructive"
+                              data-ocid={`daftar.delete_button.${index + 1}`}
                             >
-                              Ya, Hapus
-                            </AlertDialogAction>
-                          </AlertDialogFooter>
-                        </AlertDialogContent>
-                      </AlertDialog>
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent data-ocid="daftar.dialog">
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>
+                                Hapus Kwarran?
+                              </AlertDialogTitle>
+                              <AlertDialogDescription>
+                                Anda akan menghapus <strong>{k.name}</strong>.
+                                Tindakan ini tidak dapat dibatalkan.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel data-ocid="daftar.cancel_button">
+                                Batal
+                              </AlertDialogCancel>
+                              <AlertDialogAction
+                                data-ocid="daftar.confirm_button"
+                                onClick={() => handleDelete(k.id, k.name)}
+                                className="bg-destructive hover:bg-destructive/90 text-destructive-foreground"
+                              >
+                                Ya, Hapus
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      )}
                     </div>
                   </div>
                 );

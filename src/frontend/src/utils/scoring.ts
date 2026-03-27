@@ -43,13 +43,17 @@ export function computeScoreC(data: KwarranFormData): number {
   const maxPerItem = maxScore / total;
 
   let score = 0;
+  let fileBonus = 0;
   for (const act of allActivities) {
     const frek = Math.min(act.frekuensi, 5);
     if (frek > 0) {
       score += (frek / 5) * maxPerItem;
     }
+    if (act.fileUrl) {
+      fileBonus += 0.5;
+    }
   }
-  return Math.min(Math.round(score * 10) / 10, 60);
+  return Math.min(Math.round((score + fileBonus) * 10) / 10, 60);
 }
 
 export function computeTotalScore(data: KwarranFormData): number {

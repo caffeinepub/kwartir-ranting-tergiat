@@ -11,11 +11,22 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { CheckCircle2, PlusCircle, Star, Trophy, Users } from "lucide-react";
+import {
+  CheckCircle2,
+  Info,
+  PlusCircle,
+  Star,
+  Trophy,
+  Users,
+} from "lucide-react";
 import { useMemo } from "react";
 import type { NavState } from "../App";
 import type { Kwarran } from "../backend.d.ts";
-import { useListKwarran } from "../hooks/useQueries";
+import {
+  useIsAdmin,
+  useListKwarran,
+  useListMyKwarran,
+} from "../hooks/useQueries";
 import { createDefaultSectionC } from "../types/kwarran";
 import type { KwarranFormData } from "../types/kwarran";
 import {
@@ -70,7 +81,12 @@ interface Props {
 }
 
 export default function DashboardPage({ onNavigate }: Props) {
-  const { data: kwarranList, isLoading } = useListKwarran();
+  const { data: isAdmin } = useIsAdmin();
+  const { data: allKwarran, isLoading: loadingAll } = useListKwarran();
+  const { data: myKwarran, isLoading: loadingMy } = useListMyKwarran();
+
+  const kwarranList = isAdmin ? allKwarran : myKwarran;
+  const isLoading = isAdmin ? loadingAll : loadingMy;
 
   const scoredList = useMemo(() => {
     if (!kwarranList) return [];
@@ -108,6 +124,12 @@ export default function DashboardPage({ onNavigate }: Props) {
           <p className="text-muted-foreground text-sm mt-0.5">
             Kwartir Ranting Tergiat &mdash; Rekapitulasi Penilaian
           </p>
+          {isAdmin === false && (
+            <div className="flex items-center gap-1.5 text-xs text-blue-700 dark:text-blue-300 mt-2 bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 rounded-md px-3 py-1.5 inline-flex">
+              <Info className="w-3.5 h-3.5 shrink-0" />
+              Menampilkan data milik Anda. Admin dapat melihat semua data.
+            </div>
+          )}
         </div>
         <Button
           onClick={() => onNavigate({ page: "tambah" })}
@@ -208,7 +230,7 @@ export default function DashboardPage({ onNavigate }: Props) {
       <Card className="border border-border shadow-card rounded-xl">
         <CardHeader className="pb-3">
           <CardTitle className="text-base font-semibold">
-            Papan Pemeringkatan Kwarran
+            {isAdmin ? "Papan Pemeringkatan Kwarran" : "Data Kwarran Anda"}
           </CardTitle>
         </CardHeader>
         <CardContent className="p-0">

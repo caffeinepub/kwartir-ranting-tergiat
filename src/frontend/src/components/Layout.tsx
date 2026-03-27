@@ -2,6 +2,7 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import {
   ChevronRight,
+  FileText,
   Image,
   LayoutDashboard,
   ListChecks,
@@ -44,6 +45,11 @@ export default function Layout({ children, nav, onNavigate }: LayoutProps) {
             page: "banner" as const,
             label: "Kelola Banner",
             icon: Image,
+          },
+          {
+            page: "berkas" as const,
+            label: "Berkas Pendukung",
+            icon: FileText,
           },
         ]
       : []),

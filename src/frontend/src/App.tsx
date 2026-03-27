@@ -4,6 +4,7 @@ import Layout from "./components/Layout";
 import { useInternetIdentity } from "./hooks/useInternetIdentity";
 import ApprovalPage from "./pages/ApprovalPage";
 import BannerPage from "./pages/BannerPage";
+import BerkasPendukungPage from "./pages/BerkasPendukungPage";
 import DaftarKwarranPage from "./pages/DaftarKwarranPage";
 import DashboardPage from "./pages/DashboardPage";
 import KwarranFormPage from "./pages/KwarranFormPage";
@@ -20,7 +21,8 @@ export type PageName =
   | "tambah"
   | "edit"
   | "approval"
-  | "banner";
+  | "banner"
+  | "berkas";
 
 export interface NavState {
   page: PageName;
@@ -84,6 +86,7 @@ export default function App() {
         )}
         {nav.page === "approval" && <ApprovalPage />}
         {nav.page === "banner" && <BannerPage />}
+        {nav.page === "berkas" && <BerkasPendukungPage />}
       </Layout>
       <Toaster />
     </>

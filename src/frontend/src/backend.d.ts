@@ -20,6 +20,7 @@ export interface Kwarran {
     secretariatAddress: string;
     activeSatuanKaryaCount: bigint;
     maleGugusdepanCount: bigint;
+    owner: Principal;
     youngMembersCount: bigint;
     instagram: string;
     name: string;
@@ -64,6 +65,7 @@ export interface backendInterface {
     listApprovals(): Promise<Array<UserApprovalInfo>>;
     listBannerImages(): Promise<Array<string>>;
     listKwarran(): Promise<Array<Kwarran>>;
+    listMyKwarran(): Promise<Array<Kwarran>>;
     removeBannerImage(url: string): Promise<void>;
     requestApproval(): Promise<void>;
     saveCallerUserProfile(profile: UserProfile): Promise<void>;
